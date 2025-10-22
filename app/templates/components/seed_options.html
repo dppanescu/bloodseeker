@@ -1,0 +1,103 @@
+{# component: seed_options (folosește .info/.i/.pop din CSS global) #}
+{% set opt = (seed.options if seed is defined else options) or {} %}
+{% set gen = (seed.generator if seed is defined else generator) or "—" %}
+
+{# reguli active #}
+{% set ns = namespace(rules=[]) %}
+{% if opt.fuzz %}
+  {% for k, v in opt.fuzz.items() %}
+    {% if v %}
+      {% set _ = ns.rules.append(k) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% set tlds = opt.tlds or [] %}
+
+<div class="seed-options" style="line-height:1.6; margin:.5rem 0 1rem;">
+  <!-- Generator -->
+  <div class="seed-row" style="display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;">
+    <span class="info" tabindex="0" aria-label="Info: Generator">
+      <span class="i">i</span>
+      <div class="pop" role="dialog">
+        <h4>Generator</h4>
+        <div><b>Simple</b> produce câteva variante rapide.</div>
+        <div><b>DNSTwist</b> generează liste mari de typo-uri (fuzz).</div>
+        <div><b>Both</b> le rulează pe ambele.</div>
+      </div>
+    </span>
+    <span style="font-weight:600;">Generator</span>
+    <span>{{ gen }}</span>
+  </div>
+
+  <!-- Fuzz rules -->
+  <div class="seed-row" style="display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;">
+    <span class="info" tabindex="0" aria-label="Info: Fuzz rules">
+      <span class="i">i</span>
+      <div class="pop" role="dialog">
+        <h4>Fuzz Rules</h4>
+        <div><b>bitsquatting</b> – flip de bit ASCII</div>
+        <div><b>homoglyph</b> – litere similare vizual</div>
+        <div><b>hyphenation</b> – adaugare cratima</div>
+        <div><b>insertion</b> – inserare caractere</div>
+        <div><b>omission</b> – omitere caractere</div>
+        <div><b>repetition</b> – dublare caractere</div>
+        <div><b>replacement</b> – substitutii comune</div>
+        <div><b>subdomain</b> – mutare tn subdomeniu</div>
+        <div><b>transposition</b> – inversare adiacente</div>
+        <div><b>vowelswap</b> – schimbare vocale</div>
+      </div>
+    </span>
+    <span style="font-weight:600;">Fuzz rules</span>
+    <span>{% if ns.rules %} {{ ns.rules|map('upper')|list|join(', ') }} {% else %}—{% endif %}</span>
+  </div>
+
+  <!-- Similarity threshold (SLD) -->
+  <div class="seed-row" style="display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;">
+    <span class="info" tabindex="0" aria-label="Info: Similarity threshold (SLD)">
+      <span class="i">i</span>
+      <div class="pop" role="dialog">
+        <h4>Similarity threshold (SLD)</h4>
+        Prag pe distanța Levenshtein pentru labelul principal (SLD).<br>
+        0 = strict, 1–2 = recomandat, 3 = permisiv.
+      </div>
+    </span>
+    <span style="font-weight:600;">Similarity threshold (SLD)</span>
+    <span>{{ opt.max_edit_distance if opt.max_edit_distance is defined else '—' }}</span>
+  </div>
+
+  <!-- Max variants -->
+  <div class="seed-row" style="display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;">
+    <span class="info" tabindex="0" aria-label="Info: Max variants">
+      <span class="i">i</span>
+      <div class="pop" role="dialog">
+        <h4>Max variants</h4>
+        Limiteaza cate variante generam pentru a evita volume foarte mari.
+      </div>
+    </span>
+    <span style="font-weight:600;">Max variants</span>
+    <span>{{ opt.max_variants if opt.max_variants is defined else '—' }}</span>
+  </div>
+
+  <!-- TLDs -->
+  <div class="seed-row" style="display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;">
+    <span class="info" tabindex="0" aria-label="Info: TLDs">
+      <span class="i">i</span>
+      <div class="pop" role="dialog">
+        <h4>TLDs</h4>
+        Lista de sufixe (.com, .ro, .io etc.) care se combina cu variantele generate.
+      </div>
+    </span>
+    <span style="font-weight:600;">TLDs</span>
+    <span>
+      {% if tlds %}
+        {% for t in tlds %}.{{ t }}{% if not loop.last %}, {% endif %}{% endfor %}
+        <small> ({{ tlds|length }})</small>
+      {% else %}—{% endif %}
+    </span>
+  </div>
+
+  <details style="margin-top:.25rem;">
+    <summary>JSON</summary>
+    {{ opt|json_pretty }}
+  </details>
+</div>

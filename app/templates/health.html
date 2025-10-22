@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if fragment == "cards" %}
+
+  <!-- FRAGMENT: keep hx-* so polling persists after swap -->
+  <div id="health-cards"
+       hx-get="/health/cards"
+       hx-trigger="every 30s"
+       hx-select="#health-cards"
+       hx-swap="outerHTML"
+       hx-indicator="#health-indicator">
+
+    <div class="cards">
+      <!-- API -->
+      <div class="card">
+        <h3>API <span class="badge {{ data.api.status }}">{{ data.api.status|upper }}</span></h3>
+        <div class="kv">
+          <div><strong>FastAPI:</strong> {{ data.api.fastapi_version }}</div>
+          <div><strong>Uptime:</strong> {{ data.api.uptime_human }}</div>
+          <div><strong>Requests (total):</strong> {{ data.api.requests_total }}</div>
+        </div>
+      </div>
+
+      <!-- DATABASE -->
+      <div class="card">
+        <h3>Database <span class="badge {{ data.database.status }}">{{ data.database.status|upper }}</span></h3>
+        <div class="kv">
+          <div><strong>PostgreSQL:</strong> {{ data.database.server_version }}</div>
+          <div><strong>Database:</strong> {{ data.database.current_database }}</div>
+          <div><strong>Size:</strong> {{ data.database.size_human }}</div>
+          <div><strong>Connections:</strong> {{ data.database.connections }}</div>
+          <div><strong>Alembic current:</strong> {{ data.database.alembic_current }}</div>
+          <div><strong>Alembic head:</strong> {{ data.database.alembic_head }}</div>
+        </div>
+      </div>
+
+      <!-- CELERY (+ BEAT) -->
+      <div class="card">
+        <h3>Celery <span class="badge {{ data.celery.status }}">{{ data.celery.status|upper }}</span></h3>
+        <div class="kv">
+          <div><strong>Active workers:</strong> {{ data.celery.worker_count }}</div>
+          <div><strong>Workers:</strong> {{ data.celery.workers|join(', ') if data.celery.workers }}</div>
+          <div><strong>Queue depth:</strong> {{ data.celery.queue_depth }}</div>
+          <div><strong>Active tasks:</strong> {{ data.celery.tasks_active }}</div>
+          <div><strong>Reserved tasks:</strong> {{ data.celery.tasks_reserved }}</div>
+          <div><strong>Beat age:</strong> {{ data.celery.beat_age_human }}</div>
+          <div><strong>Beat status:</strong> {{ data.celery.beat_status }}</div>
+        </div>
+      </div>
+
+      <!-- SYSTEM -->
+      <div class="card">
+        <h3>System <span class="badge {{ data.system.status }}">{{ data.system.status|upper }}</span></h3>
+        <div class="kv">
+          <div><strong>OS:</strong> {{ data.system.os }}</div>
+          <div><strong>Uptime:</strong> {{ data.system.uptime_human }}</div>
+          <div><strong>CPU:</strong> {{ data.system.cpu_percent }}%</div>
+          <div><strong>RAM:</strong> {{ data.system.mem_used_human }} / {{ data.system.mem_total_human }} ({{ data.system.mem_percent }}%)</div>
+          <div><strong>Disk:</strong> {{ data.system.disk_used_human }} / {{ data.system.disk_total_human }} ({{ data.system.disk_percent }}%)</div>
+        </div>
+      </div>
+
+      <!-- CERTSTREAM (now inside the same grid) -->
+      <div class="card">
+        <h3>CertStream <span class="badge {{ data.certstream.status }}">{{ data.certstream.status|upper }}</span></h3>
+        <div class="kv">
+          <div><strong>Last seen:</strong> {{ data.certstream.last_seen_human }}</div>
+          <div><strong>Lag:</strong> {{ data.certstream.lag_human }}</div>
+          <div><strong>Source:</strong> {{ data.certstream.source }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:8px; font-size:12px; opacity:.7;">
+      Updated: {{ data.ts_human }}
+    </div>
+  </div>
+
+{% else %}
+
+  <!-- PAGE CONTAINER: no spinner inside swap target; use hx-indicator instead -->
+  <div id="health-cards"
+       hx-get="/health/cards"
+       hx-trigger="load, every 30s"
+       hx-select="#health-cards"
+       hx-swap="outerHTML"
+       hx-indicator="#health-indicator">
+  </div>
+
+  <!-- Global non-blocking indicator (shown only during HTMX requests) -->
+  <div id="health-indicator" aria-hidden="true" class="htmx-indicator">Refreshing…</div>
+
+{% endif %}
+{% endblock %}

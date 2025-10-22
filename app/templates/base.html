@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bloodseeker</title>
+<link rel="preconnect" href="https://unpkg.com" />
+<script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+<link rel="stylesheet" href="/static/css/app.css" />
+<script defer src="/static/js/app.js"></script>
+</head>
+<body>
+<header class="bm-header">
+<div class="container">
+<div class="bm-brand">Bloodseeker</div>
+<nav class="bm-nav">
+<a href="/" class="nav-link">Dashboard</a>
+<a href="/seeds" class="nav-link">Domains</a>
+<a href="/health" class="nav-link">Health</a>
+</nav>
+</div>
+</header>
+
+
+<main class="container" id="content">
+{% include "_partials/flash.html" %}
+{% block content %}{% endblock %}
+</main>
+
+
+<footer class="bm-footer">
+<div class="container">© Bloodseeker — Domain Impersonation Monitor</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Artefacte comune
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Virtual env / Python
+venv/
+.env
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+build/
+
+# Secret keys (nu urca niciodată secrete!)
+*.key
+*.pem
+*.crt
+secrets.json

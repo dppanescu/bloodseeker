@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">Variant: {{ variant.domain }}</h1>
+
+{% set score = variant.risk_score or 0 %}
+{% set score_color = 'green' if score < 40 else ('amber' if score < 70 else 'red') %}
+
+<p class="meta">
+  Risk score: <span class="badge {{ score_color }}">{{ score }}</span>
+</p>
+<p>First seen: {{ variant.first_seen_fmt or '—' }}</p>
+<p>Last checked: {{ variant.last_checked_fmt or '—' }}</p>
+
+{# ... headerul paginii rămâne ca la tine ... #}
+
+{# --- DOMAIN DETAILS (cards) --- #}
+<div class="cards" style="margin:12px 0;">
+  <!-- DNS -->
+  <div class="card">
+    <h3>DNS</h3>
+    <div class="kv">
+      {% if details.dns_ok is true %}
+        <span class="badge red">RESOLVES</span>
+      {% elif details.dns_ok is false %}
+        <span class="badge green">NO</span>
+      {% else %}
+        <span class="badge amber">—</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MX -->
+  <div class="card">
+    <h3>MX</h3>
+    <div class="kv">
+      {% if details.has_mx is true %}
+        <span class="badge amber">YES</span>
+      {% elif details.has_mx is false %}
+        <span class="badge green">NO</span>
+      {% else %}
+        <span class="badge amber">—</span>
+      {% endif %}
+      {% if details.mx_records %}
+        <div class="pre" style="margin-top:6px; max-height:120px; overflow:auto;">
+          {{ details.mx_records|join('\n') }}
+        </div>
+      {% endif %}
+      {% if details.smtp_banner %}
+        <div class="pre" style="margin-top:6px;">SMTP: {{ details.smtp_banner.banner or details.smtp_banner }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+ <!-- HTTP -->
+  <div class="card">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span>HTTP</span>
+      <span>
+        {% set hs = details.http_status %}
+        {% if not hs %}
+          <span class="badge green">—</span>
+        {% elif 200 <= hs < 300 or 500 <= hs < 600 %}
+          <span class="badge red">{{ hs }}</span>
+        {% elif 300 <= hs < 500 %}
+          <span class="badge amber">{{ hs }}</span>
+        {% else %}
+          <span class="badge amber">{{ hs }}</span>
+        {% endif %}
+      </span>
+    </h3>
+    <div class="kv">
+      <div><strong>Reason:</strong> {{ details.http_reason or '—' }}</div>
+      <div><strong>Server:</strong> {{ details.http_server or '—' }}</div>
+      <div><strong>X-Powered-By:</strong> {{ details.http_powered_by or '—' }}</div>
+      {% if details.http_redirect_url and 300 <= (details.http_status or 0) < 400 %}
+        <div><strong>Redirect to:</strong> <span class="pre">{{ details.http_redirect_url }}</span></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- TLS -->
+  <div class="card">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span>TLS</span>
+      <span>
+        {% if not details.tls_valid_to_fmt %}
+          <span class="badge red">NO CERT</span>
+        {% elif details.tls_days_left is not none %}
+          {% set dl = details.tls_days_left %}
+          {% set t_color = 'red' if dl <= 14 else ('amber' if dl <= 45 else 'green') %}
+          <span class="badge {{ t_color }}">{{ dl }} days left</span>
+        {% endif %}
+      </span>
+    </h3>
+    <div class="kv">
+      <div><strong>Issuer:</strong> {{ details.tls_issuer or '—' }}</div>
+      <div><strong>Valid from:</strong> {{ details.tls_valid_from_fmt or '—' }}</div>
+      <div><strong>Valid to:</strong> {{ details.tls_valid_to_fmt or '—' }}</div>
+    </div>
+  </div>
+
+  <!-- SPF -->
+  <div class="card">
+    <h3>SPF</h3>
+    <div class="kv">
+      {% if details.spf_found is true %}
+        <span class="badge amber">FOUND</span>
+      {% elif details.spf_found is false %}
+        <span class="badge green">NONE</span>
+      {% else %}
+        <span class="badge amber">—</span>
+      {% endif %}
+      {% if details.spf_record %}
+        <div class="pre" style="margin-top:6px;">{{ details.spf_record }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- DKIM -->
+  <div class="card">
+    <h3>DKIM</h3>
+    <div class="kv">
+      {% if details.dkim_found is true %}
+        <span class="badge amber">FOUND</span>
+      {% elif details.dkim_found is false %}
+        <span class="badge green">NONE</span>
+      {% else %}
+        <span class="badge amber">—</span>
+      {% endif %}
+      {% if details.dkim_selectors %}
+        <div class="pre" style="margin-top:6px;">selectors: {{ details.dkim_selectors|join(', ') }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- DMARC -->
+  <div class="card">
+    <h3>DMARC</h3>
+    <div class="kv">
+      {% if details.dmarc_found is true %}
+        <span class="badge amber">FOUND</span>
+      {% elif details.dmarc_found is false %}
+        <span class="badge green">NONE</span>
+      {% else %}
+        <span class="badge amber">—</span>
+      {% endif %}
+      {% if details.dmarc_policy %}
+        <div class="pre" style="margin-top:6px;">policy: {{ details.dmarc_policy }}</div>
+      {% endif %}
+      {% if details.dmarc_record %}
+        <div class="pre" style="margin-top:6px;">{{ details.dmarc_record }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .badge.info { background: rgba(90,200,250,.18); color: var(--brand); }
+  .cell { white-space: nowrap; }
+</style>
+
+{# --- HISTORY TABLE --- #}
+<h2 class="section-title">History</h2>
+<div class="table-wrap">
+  <table class="table hover">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Technique</th>
+        <th>DNS</th>
+        <th>HTTP</th>
+        <th>MX</th>
+        <th>SPF</th>
+        <th>DKIM</th>
+        <th>DMARC</th>
+        <th>CT Seen</th>
+        <th>SLD distance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in history %}
+      {% set hs = r.view.http_status %}
+      <tr>
+        <td class="cell">{{ r.view.ts_fmt }}</td>
+
+        <td class="cell">
+          {% if r.view.fuzzer %}
+            <span class="badge info">{{ r.view.fuzzer }}</span>
+          {% else %}
+            <span class="badge green">none</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          <span class="badge {{ 'red' if r.view.dns_ok else 'green' }}">
+            {{ 'YES' if r.view.dns_ok else 'NO' }}
+          </span>
+        </td>
+
+        <td class="cell">
+          {% if not hs %}
+            <span class="badge green">—</span>
+          {% elif 200 <= hs < 300 or 500 <= hs < 600 %}
+            <span class="badge red">{{ hs }}</span>
+          {% elif 300 <= hs < 500 %}
+            <span class="badge amber">{{ hs }}</span>
+          {% else %}
+            <span class="badge amber">{{ hs }}</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.has_mx is false %}
+            <span class="badge green">NO</span>
+          {% elif r.view.has_mx is true %}
+            <span class="badge amber">YES</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.spf_found is true %}
+            <span class="badge amber">YES</span>
+          {% elif r.view.spf_found is false %}
+            <span class="badge green">NO</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.dkim_found is true %}
+            <span class="badge amber">YES</span>
+          {% elif r.view.dkim_found is false %}
+            <span class="badge green">NO</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.dmarc_found is true %}
+            <span class="badge amber">YES</span>
+          {% elif r.view.dmarc_found is false %}
+            <span class="badge green">NO</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.ct_seen is not none %}
+            {% set c = r.view.ct_seen|int %}
+            {% set ct_color = 'green' if c == 0 else ('amber' if c < 5 else 'red') %}
+            <span class="badge {{ ct_color }}">{{ c }}</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+
+        <td class="cell">
+          {% if r.view.sld_distance is not none %}
+            {% set d = r.view.sld_distance|int %}
+            {% set dist_color = 'red' if d == 0 else ('amber' if d <= 2 else 'green') %}
+            <span class="badge {{ dist_color }}">{{ d }}</span>
+          {% else %}
+            <span class="badge amber">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      {% if history|length == 0 %}
+      <tr><td colspan="10" class="muted">No checks yet</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{# --- WHOIS (doar la cerere) --- #}
+<div style="margin-top:16px; display:flex; align-items:center; gap:10px;">
+  <form method="post" action="/variants/{{ variant.id }}/whois" style="margin:0;">
+    <button class="btn btn-primary">WHOIS Scan</button>
+  </form>
+  <a class="btn" href="/variants/{{ variant.id }}?whois=1">Show WHOIS (latest)</a>
+</div>
+
+{% if whois %}
+  <div class="card" style="margin:12px 0;">
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <span>WHOIS {{ whois.source and '(' ~ whois.source|upper ~ ')' or '' }}</span>
+      <form method="post" action="/variants/{{ variant.id }}/whois" style="margin:0;">
+        <button class="btn btn-primary">Refresh WHOIS</button>
+      </form>
+    </div>
+    {% set d = whois.data or {} %}
+    <div class="settings-grid">
+      <div class="field"><div class="field-label">Registrar</div><div>{{ d.registrar or '—' }}</div></div>
+      <div class="field"><div class="field-label">Created</div><div>{{ d.created_fmt or d.created or '—' }}</div></div>
+      <div class="field"><div class="field-label">Updated</div><div>{{ d.updated_fmt or d.updated or '—' }}</div></div>
+      <div class="field"><div class="field-label">Expires</div><div>{{ d.expires_fmt or d.expires or '—' }}</div></div>
+      <div class="field"><div class="field-label">Registrant org</div><div>{{ d.registrant_org or '—' }}</div></div>
+      <div class="field"><div class="field-label">Registrant country</div><div>{{ d.registrant_country or '—' }}</div></div>
+      <div class="field"><div class="field-label">Contact email</div><div>{{ d.email or '—' }}</div></div>
+      <div class="field" style="grid-column:1/-1;"><div class="field-label">Status</div><div>{{ (d.statuses or [])|join(', ') if d.statuses else '—' }}</div></div>
+      <div class="field" style="grid-column:1/-1;"><div class="field-label">Name servers</div><div>{{ (d.nameservers or [])|join(', ') if d.nameservers else '—' }}</div></div>
+      <div class="field"><div class="field-label">Domain age</div><div>{{ whois.domain_age or '—' }}</div></div>
+      <div class="field"><div class="field-label">Last WHOIS check</div><div>{{ whois.last_check_fmt or '—' }}</div></div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

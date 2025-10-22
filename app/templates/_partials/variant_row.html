@@ -1,0 +1,31 @@
+{# app/templates/_partials/variant_row.html #}
+<tr id="variant-{{ v.id }}">
+  <td>{{ v.id }}</td>
+  <td><a class="link" href="/variants/{{ v.id }}">{{ v.domain }}</a></td>
+  <td>{{ v.status or 'new' }}</td>
+  <td>
+    {% set score = v.risk_score or 0 %}
+    {% set color = 'green' if score < 40 else ('amber' if score < 70 else 'red') %}
+    <span class="badge {{ color }}">{{ score }}</span>
+  </td>
+  <td>{{ v.last_checked_at or '—' }}</td>
+  <td>
+    <!-- hidden care trimite mereu monitor=0/1 -->
+    <input type="hidden" id="mon-{{ v.id }}" name="monitor" value="{{ 0 if v.status == 'stop' else 1 }}">
+    <label class="switch" title="Start/Stop monitoring for {{ v.domain }}">
+      <input
+        type="checkbox"
+        aria-label="Monitor {{ v.domain }}"
+        {% if v.status != 'stop' %}checked{% endif %}
+        onchange="document.getElementById('mon-{{ v.id }}').value = this.checked ? 1 : 0"
+        hx-post="/variants/{{ v.id }}/monitor"
+        hx-trigger="change"
+        hx-include="#mon-{{ v.id }},#q,#sort,#per_page,#min_score"
+        hx-vals='{"page":"{{ (page if page is defined else request.query_params.get("page","1")) }}"}'
+        hx-target="#variant-{{ v.id }}"
+        hx-swap="outerHTML"
+      />
+      <span class="slider"></span>
+    </label>
+  </td>
+</tr>

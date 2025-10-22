@@ -1,0 +1,14 @@
+[Unit]
+Description=BrandMon API (uvicorn)
+After=network.target
+
+[Service]
+User=brandmon
+Group=brandmon
+WorkingDirectory=/opt/brandmon
+EnvironmentFile=/etc/brandmon/brandmon.env
+ExecStart=/opt/brandmon/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080 --proxy-headers
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

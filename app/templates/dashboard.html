@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">Dashboard</h1>
+<div class="grid-cards">
+<div class="card kpi">
+<div class="kpi-label">Domains</div>
+<div class="kpi-value">{{ seeds }}</div>
+</div>
+<div class="card kpi">
+<div class="kpi-label">Variants</div>
+<div class="kpi-value">{{ variants }}</div>
+</div>
+<div class="card kpi">
+<div class="kpi-label">Suspicious (≥70)</div>
+<div class="kpi-value">{{ suspicious }}</div>
+</div>
+</div>
+
+
+<h2 class="section-title">Latest checks</h2>
+<div class="table-wrap">
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Time</th>
+<th>DNS</th>
+<th>HTTP</th>
+</tr>
+</thead>
+<tbody>
+{% for r in latest %}
+<tr>
+<td><a href="/variants/{{ r.variant_id }}">#{{ r.variant_id }}</a></td>
+<td>{{ r.ts }}</td>
+<td><span class="badge {{ 'green' if r.dns_ok else 'red' }}">{{ 'OK' if r.dns_ok else 'NOT' }}</span></td>
+<td>{{ r.http_status or '—' }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

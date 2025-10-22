@@ -1,0 +1,14 @@
+[Unit]
+Description=BrandMon Celery Beat
+After=network.target redis.service
+
+[Service]
+User=brandmon
+Group=brandmon
+WorkingDirectory=/opt/brandmon
+EnvironmentFile=/etc/brandmon/brandmon.env
+ExecStart=/opt/brandmon/.venv/bin/celery -A app.tasks.celery_app beat --loglevel=INFO
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

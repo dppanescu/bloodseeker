@@ -1,0 +1,3 @@
+{% if request.query_params.get('msg') %}
+<div class="flash">{{ request.query_params.get('msg') }}</div>
+{% endif %}

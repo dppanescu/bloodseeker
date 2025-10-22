@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="page-title">Add domains</h1>
+
+<!-- CARD: Generator + Settings -->
+<div class="form-card" style="margin-bottom:14px;">
+  <form method="post" action="/seeds/add" class="stack-row wrap" style="gap:10px;">
+    <input type="hidden" name="token" value="{{ token }}" />
+
+    <!-- Domain -->
+    <div class="field" style="min-width:240px;">
+      <div class="field-label">
+        Domain
+        <span class="info" tabindex="0" aria-label="Info about Domain">
+          <span class="i">i</span>
+          <div class="pop">
+            <h4>Domain</h4>
+            Enter the base brand domain. Example: <span class="k">example.ro</span>.
+          </div>
+        </span>
+      </div>
+      <input name="name" class="input" placeholder="example.ro" required />
+    </div>
+
+    <!-- Generator (default: simple) -->
+    <div class="field" style="min-width:220px;">
+      <div class="field-label">
+        Generator
+        <span class="info" tabindex="0" aria-label="Info about Generator">
+          <span class="i">i</span>
+          <div class="pop">
+            <h4>Generator</h4>
+            <b>Simple</b> creates a few quick variants.<br>
+            <b>DNSTwist</b> uses advanced fuzzing.<br>
+            <b>Both</b> runs both.
+          </div>
+        </span>
+      </div>
+      <select name="generator" class="select" id="generator-select">
+        <option value="simple" selected>Simple</option>
+        <option value="dnstwist">DNSTwist</option>
+        <option value="both">Both</option>
+      </select>
+    </div>
+
+    <!-- Advanced – only for dnstwist/both -->
+    <details id="adv-card" class="card" style="padding:10px; display:none; width:100%;">
+      <summary>Settings</summary>
+
+      <!-- row 1: inputs -->
+      <div class="settings-grid" style="margin-top:10px;">
+        <div class="field">
+          <div class="field-label">
+            TLDs
+            <span class="info" tabindex="0" aria-label="Info about TLDs">
+              <span class="i">i</span>
+              <div class="pop">
+                <h4>TLDs</h4>
+                Limit results to these TLDs (comma-separated).<br>
+                Example: <span class="k">com,net,org,io,co,ru,cn,tk,top,gq,cf,info</span>.
+              </div>
+            </span>
+          </div>
+          <input name="tlds" class="input" value="com,net,org,io,co,ru,cn,tk,top,gq,cf,info" placeholder="com,net,org,io,co,ru,cn,tk,top,gq,cf,info" />
+        </div>
+
+        <!-- moved SLD before Max variants -->
+        <div class="field">
+          <div class="field-label">
+            Similarity threshold (SLD)
+            <span class="info" tabindex="0" aria-label="Info about Similarity">
+              <span class="i">i</span>
+              <div class="pop">
+                <h4>Similarity threshold (SLD)</h4>
+                Edit distance on the main label (Levenshtein).<br>
+                0 = strict, 1–2 = recommended, 3 = permissive.
+              </div>
+            </span>
+          </div>
+          <input type="number" name="max_edit_distance" class="input" value="2" min="0" max="3" />
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            Max variants
+            <span class="info" tabindex="0" aria-label="Info about Max variants">
+              <span class="i">i</span>
+              <div class="pop">
+                <h4>Max variants</h4>
+                Upper bound to keep volumes manageable.
+              </div>
+            </span>
+          </div>
+          <input type="number" name="max_variants" class="input" value="1000" min="1" max="2000" />
+        </div>
+      </div>
+
+      <!-- row 2: fuzz rules -->
+      <div class="section-title" style="margin-top:14px;">Fuzz rules</div>
+      <div class="fuzz-grid">
+        <div class="option-row">
+          <span class="option-meta">Homoglyph
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Homoglyph</h4> Visually similar replacements (e.g. <span class="k">o→0</span>, <span class="k">l→1</span>).</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_homoglyph" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Omission
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Omission</h4> Missing letters: <span class="k">exmple.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_omission" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Transposition
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Transposition</h4> Swap adjacent letters: <span class="k">examlpe.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_transposition" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Insertion
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Insertion</h4> Insert characters: <span class="k">examp1e.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_insertion" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Replacement
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Replacement</h4> Common swaps: <span class="k">a→4, e→3, s→5</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_replacement" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Repetition
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Repetition</h4> Doubled letters: <span class="k">exammple.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_repetition" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Bitsquatting
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Bitsquatting</h4> Variants from bit flips at DNS resolution.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_bitsquatting" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Vowel-swap
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Vowel-swap</h4> Vowel changes: <span class="k">example→exemple</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_vowelswap" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Hyphenation
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Hyphenation</h4> Insert hyphen: <span class="k">ex-ample.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_hyphenation" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-meta">Subdomain
+            <span class="info" tabindex="0"><span class="i">i</span>
+              <div class="pop"><h4>Subdomain</h4> Prefixes in subdomain: <span class="k">login.example.ro</span>.</div>
+            </span>
+          </span>
+          <label class="switch sm">
+            <input type="checkbox" name="f_subdomain" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <button class="btn btn-primary" type="submit">Add</button>
+  </form>
+</div>
+
+<div class="soft-sep"></div>
+
+<!-- DOMAIN LIST -->
+<div class="table-wrap" style="margin-top:12px;">
+  <table class="table hover">
+    <thead>
+      <tr>
+        <th style="width:80px;">ID</th>
+        <th>Name</th>
+        <th style="width:220px;">Created</th>
+        <th style="width:140px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in seeds %}
+      <tr>
+        <td>{{ s.id }}</td>
+        <td><a class="link" href="/seeds/{{ s.id }}">{{ s.name }}</a></td>
+        <td>
+          <span title="{{ s.created_at }}">{{ s.created_human }}</span>
+        </td>
+        <td>
+          <form method="post" action="/seeds/{{ s.id }}/delete" onsubmit="return confirm('Delete seed and full history?');" style="display:inline;">
+            <input type="hidden" name="token" value="{{ token }}">
+            <button class="btn btn-danger" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if seeds|length == 0 %}
+      <tr><td colspan="4" class="muted">No domains yet</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  (function () {
+    const sel = document.getElementById('generator-select');
+    const adv = document.getElementById('adv-card');
+
+    function setDisabledInside(node, disabled) {
+      node.querySelectorAll('input, select, textarea, button').forEach(el => {
+        if (el.name === 'generator') return;
+        el.disabled = disabled;
+      });
+    }
+
+    function toggleAdv() {
+      const v = sel.value;
+      if (v === 'simple') {
+        adv.style.display = 'none';
+        adv.removeAttribute('open');
+        setDisabledInside(adv, true);
+      } else {
+        adv.style.display = 'block';
+        adv.setAttribute('open', '');
+        setDisabledInside(adv, false);
+      }
+    }
+
+    toggleAdv();
+    sel.addEventListener('change', toggleAdv);
+  })();
+</script>
+
+{% endblock %}

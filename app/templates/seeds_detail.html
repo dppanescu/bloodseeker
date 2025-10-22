@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">Domain: {{ seed.name }}</h1>
+
+{% include "components/seed_options.html" %}
+
+{% set tld_count = (seed.options.tlds|length) if seed.options and seed.options.tlds else 0 %}
+<div class="grid-cards" style="margin:8px 0 12px;">
+  <div class="card kpi">
+    <div class="kpi-label">Variante generate</div>
+    <div class="kpi-value">
+      {{ kpi.total_variants if kpi is defined and kpi.total_variants is not none else '—' }}
+    </div>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-label">Cu risc ≥ 70</div>
+    <div class="kpi-value">
+      {{ kpi.high_risk if kpi is defined and kpi.high_risk is not none else '—' }}
+    </div>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-label">TLD-uri configurate</div>
+    <div class="kpi-value">{{ tld_count }}</div>
+  </div>
+</div>
+
+<div class="filters">
+  <label class="control">
+    Filter
+    <input class="input" name="q" id="q" placeholder="filter domain" value="{{ q or '' }}"
+         hx-get="/seeds/{{ seed.id }}" hx-trigger="keyup changed delay:400ms"
+         hx-include="#sort,#min_score"
+         hx-target="#variants" hx-push-url="true" />
+  </label>
+
+  <label class="control">
+    Min. score
+    <input class="input" type="number" min="0" max="100" name="min_score" id="min_score" value="{{ min_score or 0 }}"
+           hx-get="/seeds/{{ seed.id }}" hx-trigger="change"
+           hx-target="#variants" hx-include="#q,#sort,#per_page" hx-push-url="true" />
+  </label>
+
+  <label class="control">
+    Sort
+    <select class="select" id="sort" name="sort"
+            hx-get="/seeds/{{ seed.id }}" hx-trigger="change"
+            hx-target="#variants" hx-include="#q,#per_page,#min_score" hx-push-url="true">
+      <option value="-risk" {{ 'selected' if sort=='-risk' else '' }}>Risk ↓</option>
+      <option value="risk"  {{ 'selected' if sort=='risk' else '' }}>Risk ↑</option>
+      <option value="-last" {{ 'selected' if sort=='-last' else '' }}>Last check ↓</option>
+      <option value="last"  {{ 'selected' if sort=='last' else '' }}>Last check ↑</option>
+      <option value="domain"  {{ 'selected' if sort=='domain' else '' }}>Domain A→Z</option>
+      <option value="-domain" {{ 'selected' if sort=='-domain' else '' }}>Domain Z→A</option>
+    </select>
+  </label>
+</div>
+
+<div id="variants" hx-swap-oob="true">
+  <div class="table-wrap">
+    <table class="table hover">
+      <thead>
+        <tr>
+          <th style="width:80px;">ID</th>
+          <th>Domain</th>
+          <th style="width:120px;">Status</th>
+          <th style="width:120px;">Score</th>
+          <th style="width:180px;">Last check</th>
+          <th style="width:120px;">Monitor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in variants %}
+        <tr id="variant-{{ v.id }}">
+          <td>{{ v.id }}</td>
+          <td><a class="link" href="/variants/{{ v.id }}">{{ v.domain }}</a></td>
+          <td>{{ v.status or 'new' }}</td>
+          <td>
+            {% set score = v.risk_score or 0 %}
+            {% set color = 'green' if score < 40 else ('amber' if score < 70 else 'red') %}
+            <span class="badge {{ color }}">{{ score }}</span>
+          </td>
+          <td>{{ v.last_checked_at or '—' }}</td>
+          <td>
+            <input type="hidden" id="mon-{{ v.id }}" name="monitor" value="{{ 0 if v.status == 'stop' else 1 }}">
+            <label class="switch" title="Start/Stop monitoring for {{ v.domain }}">
+              <input
+                type="checkbox"
+                aria-label="Monitor {{ v.domain }}"
+                {% if v.status != 'stop' %}checked{% endif %}
+                onchange="document.getElementById('mon-{{ v.id }}').value = this.checked ? 1 : 0"
+                hx-post="/variants/{{ v.id }}/monitor"
+                hx-trigger="change"
+                hx-include="#mon-{{ v.id }},#q,#sort,#per_page,#min_score"
+                hx-vals='{"page":"{{ page }}"}'
+                hx-target="#variant-{{ v.id }}"
+                hx-swap="outerHTML"
+              />
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if variants|length == 0 %}
+        <tr><td colspan="6" class="muted">No variants</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {# ---- pager + per-page (dreapta jos) ---- #}
+    {% set window = 5 %}
+    {% set current = page %}
+    {% set total_pages = pages %}
+    {% set start = current - 2 if current - 2 > 1 else 1 %}
+    {% set end = start + window - 1 %}
+    {% if end > total_pages %}
+      {% set end = total_pages %}
+      {% set start = (end - window + 1) if (end - window + 1) > 1 else 1 %}
+    {% endif %}
+
+    <div class="pager-bar">
+      <div class="pager">
+        {% set window = 5 %}
+        {% set current = page %}
+        {% set total_pages = pages %}
+        {% set start = current - 2 if current - 2 > 1 else 1 %}
+        {% set end = start + window - 1 %}
+        {% if end > total_pages %}
+          {% set end = total_pages %}
+          {% set start = (end - window + 1) if (end - window + 1) > 1 else 1 %}
+        {% endif %}
+
+    {% if current > 1 %}
+      <a href="#"
+         hx-get="/seeds/{{ seed.id }}"
+         hx-target="#variants"
+         hx-include="#q,#sort,#min_score"
+         hx-vals='{"page":"{{ current-1 }}"}'
+         hx-push-url="true">&laquo;</a>
+    {% else %}
+      <span class="muted">&laquo;</span>
+    {% endif %}
+
+    {% for p in range(start, end + 1) %}
+      {% if p == current %}
+        <span class="active">{{ p }}</span>
+      {% else %}
+        <a href="#"
+           hx-get="/seeds/{{ seed.id }}"
+           hx-target="#variants"
+           hx-include="#q,#sort,#min_score"
+           hx-vals='{"page":"{{ p }}"}'
+           hx-push-url="true">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if current < total_pages %}
+      <a href="#"
+         hx-get="/seeds/{{ seed.id }}"
+         hx-target="#variants"
+         hx-include="#q,#sort,#min_score"
+         hx-vals='{"page":"{{ current+1 }}"}'
+         hx-push-url="true">&raquo;</a>
+        {% else %}
+          <span class="muted">&raquo;</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
