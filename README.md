@@ -1,4 +1,4 @@
-# BrandMon (baseline)
+# Bloodseeker (baseline)
 
 A clean, production-lean baseline for BrandMon. Stack: FastAPI + Jinja2/HTMX, PostgreSQL, Redis, Celery (worker + beat), no Docker.
 Integrations: CertStream seed (separate service), WhoIsXML (key via env), DNS/HTTP probes (timeouts), scoring, alerts (email/Splunk HEC/Teams), structured logging to `/var/log/brandmon` with safe fallback.
