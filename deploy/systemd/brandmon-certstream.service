@@ -1,0 +1,14 @@
+[Unit]
+Description=BrandMon CertStream Consumer
+After=network.target
+
+[Service]
+User=brandmon
+Group=brandmon
+WorkingDirectory=/opt/brandmon
+EnvironmentFile=/etc/brandmon/brandmon.env
+ExecStart=/opt/brandmon/.venv/bin/python -m app.services.certstream_consumer
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title">Domain: {{ seed.name }}</h1>
+
+{% set tld_count = (tlds|length) if tlds else 0 %}
+
+<div class="grid-cards">
+  <!-- 1: Variante generate -->
+  <div class="card">
+    <h3>Variants generated</h3>
+    <div class="kpi-value">{{ kpi.total_variants if kpi.total_variants is not none else '—' }}</div>
+  </div>
+
+  <!-- 2: Cu risc (interval) -->
+  <div class="card">
+    <div class="page-head">
+      <h3 style="margin:0">Risk</h3>
+      {% set risky = kpi.risk_count or 0 %}
+      {% set risk_color = 'green' if risky == 0 else 'amber' %}
+      <span id="kpi-risk-badge"><span class="badge {{ risk_color }}">{{ risky }}</span></span>
+    </div>
+    <form class="stack-row wrap" style="margin-top:6px;"
+          hx-get="/seeds/{{ seed.id }}" hx-target="#variants" hx-push-url="true"
+          hx-include="#q,#per_page" hx-vals='{"sort":"{{ sort }}"}'>
+      <label class="control" style="min-width:auto;">
+        <span class="field-label">Min</span>
+        <input id="risk_min_in" name="risk_min" class="input" type="number" min="0" max="100"
+               value="{{ risk_min }}" style="width:90px;">
+      </label>
+      <label class="control" style="min-width:auto;">
+        <span class="field-label">Max</span>
+        <input id="risk_max_in" name="risk_max" class="input" type="number" min="0" max="100"
+               value="{{ risk_max }}" style="width:90px;">
+      </label>
+      <button class="btn btn-primary" type="submit">Apply</button>
+    </form>
+  </div>
+
+  <!-- 3: TLD-uri configurate (număr + info popover) -->
+  <div class="card">
+    <div class="page-head">
+      <h3 style="margin:0">TLDs</h3>
+      <span class="info" tabindex="0" aria-label="detalii TLD">
+        <span class="i">i</span>
+        <div class="pop">
+          <h4>TLDs ({{ tld_count }})</h4>
+          {% if tld_count == 0 %}
+            <div class="muted">No TLDs configured.</div>
+          {% else %}
+            <div class="stack-row wrap" style="gap:8px;">
+              {% for t in tlds %}
+                <span class="badge muted">.{{ t }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </span>
+    </div>
+    <div class="kpi-value">{{ tld_count }}</div>
+  </div>
+
+  <!-- 4: Similarity threshold (SLD) + info -->
+  <div class="card">
+    <div class="page-head">
+      <h3 style="margin:0">Similarity threshold</h3>
+      <span class="info" tabindex="0" aria-label="ce înseamnă SLD threshold">
+        <span class="i">i</span>
+        <div class="pop">
+          <h4>Ce înseamnă?</h4>
+          <div>Pragul este diferența maximă permisă între <b>SLD</b> (partea din stânga punctului) al domeniului original și cel al variantei.</div>
+          <div style="margin-top:6px;">Ex.: <code class="k">mapn</code> vs <code class="k">mpan</code> ⇒ distanță 2. Cu threshold <b>2</b> trece; cu <b>1</b> nu.</div>
+        </div>
+      </span>
+    </div>
+    <div class="kpi-value">{{ seed.options.max_edit_distance if seed.options and seed.options.max_edit_distance is not none else 0 }}</div>
+  </div>
+
+  <!-- 5: CT hits (badge colorat + info) -->
+  <div class="card">
+    <div class="page-head">
+      <h3 style="margin:0">Certificate Transparency</h3>
+      <span class="info" tabindex="0" aria-label="domenii cu CT hit">
+        <span class="i">i</span>
+        <div class="pop">
+          <h4>Top domains</h4>
+          {% if ct_domains|length == 0 %}
+            <div class="muted">No certificate found.</div>
+          {% else %}
+            <ul style="margin:6px 0 0 18px;">
+              {% for d, hits in ct_domains %}
+                <li><b>{{ d }}</b> — {{ hits }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </span>
+    </div>
+    {% set ct = kpi.ct_hits_total or 0 %}
+    {% set ct_color = 'green' if ct == 0 else 'amber' %}
+    <div class="kpi-value"><span class="badge {{ ct_color }}">{{ ct }}</span></div>
+  </div>
+
+  <!-- 6: Generator (ultimul; linii separate, fără '+') -->
+  <div class="card">
+    <h3>Generator</h3>
+    <div class="stack-row" style="flex-direction:column; align-items:flex-start;">
+      {% for line in generator_lines %}
+        <span>{{ line }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <label class="control">
+    Filter
+    <input class="input" name="q" id="q" placeholder="filter domain" value="{{ q or '' }}"
+           hx-get="/seeds/{{ seed.id }}" hx-trigger="keyup changed delay:400ms"
+           hx-include="#risk_min,#risk_max"
+           hx-target="#variants" hx-push-url="true" />
+  </label>
+</div>
+
+<div id="variants" hx-swap-oob="true">
+  <div class="table-wrap">
+    <table class="table hover">
+      <thead>
+        <tr>
+          <th style="width:80px;">
+            {% set next = 'id' if sort!='id' else '-id' %}
+            <a class="link" hx-get="/seeds/{{ seed.id }}" hx-vals='{"sort":"{{ next }}"}'
+               hx-include="#q,#risk_min_in,#risk_max_in,#per_page" hx-target="#variants" hx-push-url="true">ID</a>
+          </th>
+          <th>
+            {% set next = 'domain' if sort!='domain' else '-domain' %}
+            <a class="link" hx-get="/seeds/{{ seed.id }}" hx-vals='{"sort":"{{ next }}"}'
+               hx-include="#q,#risk_min_in,#risk_max_in,#per_page" hx-target="#variants" hx-push-url="true">Domain</a>
+          </th>
+          <th style="width:120px;">Status</th>
+          <th style="width:120px;">
+            {% set next = 'risk' if sort!='risk' else '-risk' %}
+            <a class="link" hx-get="/seeds/{{ seed.id }}" hx-vals='{"sort":"{{ next }}"}'
+               hx-include="#q,#risk_min_in,#risk_max_in,#per_page" hx-target="#variants" hx-push-url="true">Score</a>
+          </th>
+          <th style="width:180px;">
+            {% set next = 'last' if sort!='last' else '-last' %}
+            <a class="link" hx-get="/seeds/{{ seed.id }}" hx-vals='{"sort":"{{ next }}"}'
+               hx-include="#q,#risk_min_in,#risk_max_in,#per_page" hx-target="#variants" hx-push-url="true">Last check</a>
+          </th>
+          <th style="width:120px;">Monitor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in variants %}
+        <tr id="variant-{{ v.id }}">
+          <td>{{ v.id }}</td>
+          <td><a class="link" href="/variants/{{ v.id }}">{{ v.domain }}</a></td>
+          <td>{{ v.status or 'new' }}</td>
+          <td>
+            {% set score = v.risk_score or 0 %}
+            {% set color = 'green' if score < 40 else ('amber' if score < 70 else 'red') %}
+            <span class="badge {{ color }}">{{ score }}</span>
+          </td>
+          <td>{{ v.last_checked_at or '—' }}</td>
+          <td>
+            <input type="hidden" id="mon-{{ v.id }}" name="monitor" value="{{ 0 if v.status == 'stop' else 1 }}">
+            <label class="switch" title="Start/Stop monitoring for {{ v.domain }}">
+              <input
+                type="checkbox"
+                aria-label="Monitor {{ v.domain }}"
+                {% if v.status != 'stop' %}checked{% endif %}
+                onchange="document.getElementById('mon-{{ v.id }}').value = this.checked ? 1 : 0"
+                hx-post="/variants/{{ v.id }}/monitor"
+                hx-trigger="change"
+                hx-include="#mon-{{ v.id }},#q,#per_page,#risk_min_in,#risk_max_in"
+                hx-vals='{"page":"{{ page }}"}'
+                hx-target="#variant-{{ v.id }}"
+                hx-swap="outerHTML"
+              />
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if variants|length == 0 %}
+        <tr><td colspan="6" class="muted">No variants</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {# pager #}
+    {% set window = 5 %}
+    {% set current = page %}
+    {% set total_pages = pages %}
+    {% set start = current - 2 if current - 2 > 1 else 1 %}
+    {% set end = start + window - 1 %}
+    {% if end > total_pages %}
+      {% set end = total_pages %}
+      {% set start = (end - window + 1) if (end - window + 1) > 1 else 1 %}
+    {% endif %}
+
+    <div class="pager-bar">
+      <div class="pager">
+        {% if current > 1 %}
+          <a href="#"
+             hx-get="/seeds/{{ seed.id }}"
+             hx-target="#variants"
+             hx-include="#q,#risk_min_in,#risk_max_in"
+             hx-vals='{"page":"{{ current-1 }}"}'
+             hx-push-url="true">&laquo;</a>
+        {% else %}
+          <span class="muted">&laquo;</span>
+        {% endif %}
+
+        {% for p in range(start, end + 1) %}
+          {% if p == current %}
+            <span class="active">{{ p }}</span>
+          {% else %}
+            <a href="#"
+               hx-get="/seeds/{{ seed.id }}"
+               hx-target="#variants"
+               hx-include="#q,#risk_min_in,#risk_max_in"
+               hx-vals='{"page":"{{ p }}"}'
+               hx-push-url="true">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if current < total_pages %}
+          <a href="#"
+             hx-get="/seeds/{{ seed.id }}"
+             hx-target="#variants"
+             hx-include="#q,#risk_min_in,#risk_max_in"
+             hx-vals='{"page":"{{ current+1 }}"}'
+             hx-push-url="true">&raquo;</a>
+        {% else %}
+          <span class="muted">&raquo;</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

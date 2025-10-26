@@ -1,0 +1,41 @@
+{# app/templates/_partials/variants_table.html #}
+{% set page = (request.query_params.get('page','1')|int) %}
+{% set per_page = (request.query_params.get('per_page','25')|int) %}
+{% set total = total if total is defined else (variants|length) %}
+{% set pages = ( (total + per_page - 1) // per_page ) %}
+
+<div class="table-wrap">
+  <table class="table hover">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Variant</th>
+        <th>State</th>
+        <th>Risk</th>
+        <th>Last check</th>
+        <th>Monitor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in variants %}
+        {% include "_partials/variant_row.html" %}
+      {% endfor %}
+      {% if variants|length == 0 %}
+      <tr><td colspan="6" class="muted">No results</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{% if pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+  {% set q = request.query_params %}
+  {% set base = '/seeds/' ~ seed.id %}
+  {% for p in range(1, pages+1) %}
+    {% set cls = 'page-link active' if p==page else 'page-link' %}
+    <a class="{{ cls }}"
+       hx-get="{{ base }}?page={{ p }}&per_page={{ q.get('per_page','25') }}&sort={{ q.get('sort','-risk') }}&min_score={{ q.get('min_score','0') }}&q={{ q.get('q','') }}"
+       hx-target="#variants" hx-push-url="true">{{ p }}</a>
+  {% endfor %}
+</nav>
+{% endif %}

@@ -1,0 +1,32 @@
+<!-- app/templates/_partials/whois_table.html -->
+{% if whois %}
+  <h2 class="section-title">WHOIS</h2>
+  <div class="card" id="whois-card" style="margin:12px 0;">
+    <div class="page-head" style="margin:0 0 8px;">
+      <div class="section-title" style="margin:0;">
+        WHOIS{% if whois.source %} <span class="badge info">{{ whois.source|upper }}</span>{% endif %}
+      </div>
+      <button
+        class="btn"
+        hx-post="/variants/{{ variant.id }}/whois/trigger"
+        hx-target="#whois-btn-wrap"
+        hx-swap="outerHTML">
+        Refresh WHOIS
+      </button>
+    </div>
+
+    {% set d = whois.data or {} %}
+    <div class="settings-grid">
+      <div class="field"><div class="field-label">Domain</div><div>{{ variant.domain }}</div></div>
+      <div class="field"><div class="field-label">Registrar</div><div>{{ d.registrar or '—' }}</div></div>
+      <div class="field"><div class="field-label">Created</div><div>{{ d.created_fmt or d.created or '—' }}</div></div>
+      <div class="field"><div class="field-label">Updated</div><div>{{ d.updated_fmt or d.updated or '—' }}</div></div>
+      <div class="field"><div class="field-label">Expires</div><div>{{ d.expires_fmt or d.expires or '—' }}</div></div>
+      <div class="field"><div class="field-label">Contact email</div><div>{{ d.email or '—' }}</div></div>
+      <div class="field" style="grid-column:1/-1;"><div class="field-label">Status</div><div>{% if d.statuses %}{{ d.statuses|join(', ') }}{% else %}—{% endif %}</div></div>
+      <div class="field" style="grid-column:1/-1;"><div class="field-label">Name servers</div><div>{% if d.nameservers %}{{ d.nameservers|join(', ') }}{% else %}—{% endif %}</div></div>
+      <div class="field"><div class="field-label">Last WHOIS check</div><div>{{ whois.last_check_fmt or '—' }}</div></div>
+      <div class="field"><div class="field-label">Domain age</div><div>{{ whois.domain_age or '—' }}</div></div>
+    </div>
+  </div>
+{% endif %}

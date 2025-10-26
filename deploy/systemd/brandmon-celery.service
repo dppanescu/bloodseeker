@@ -1,0 +1,14 @@
+[Unit]
+Description=BrandMon Celery Worker
+After=network.target redis.service
+
+[Service]
+User=brandmon
+Group=brandmon
+WorkingDirectory=/opt/brandmon
+EnvironmentFile=/etc/brandmon/brandmon.env
+ExecStart=/opt/brandmon/.venv/bin/celery -A app.tasks.celery_app worker --loglevel=INFO --concurrency=2
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

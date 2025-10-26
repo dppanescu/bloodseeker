@@ -1,0 +1,36 @@
+[app]
+host = "0.0.0.0"
+port = 8080
+debug = false
+base_url = "http://localhost:8080"
+
+[database]
+url = "postgresql+psycopg2://brandmon:brandmon@localhost:5432/brandmon"
+
+[redis]
+url = "redis://localhost:6379/0"
+
+[alerts]
+email_enabled = false
+smtp_host = "localhost"
+smtp_port = 25
+smtp_starttls = false
+smtp_from = "brandmon@localhost"
+smtp_to = ["security@example.com"]
+
+splunk_hec_enabled = false
+splunk_hec_url = ""
+splunk_hec_source = "brandmon"
+splunk_hec_sourcetype = "brandmon:event"
+
+teams_enabled = false
+teams_webhook_url = ""
+
+[scoring]
+alert_threshold = 70
+
+[dnstwist]
+path = "/usr/bin/dnstwist"
+enabled = true
+timeout_sec = 60
+max_variants = 2000

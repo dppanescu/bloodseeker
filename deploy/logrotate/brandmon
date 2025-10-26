@@ -1,0 +1,11 @@
+/var/log/brandmon/brandmon.log {
+    daily
+    rotate 14
+    compress
+    missingok
+    notifempty
+    create 0640 brandmon brandmon
+    postrotate
+        systemctl kill -s HUP --kill-who=main brandmon.service 2>/dev/null || true
+    endscript
+}
